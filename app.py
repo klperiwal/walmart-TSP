@@ -3,17 +3,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons
 import seaborn as sns
-
 from itertools import permutations
 
-# Categories and Grid Initialization
 categories = [
     'Grocery', 'Electronics', 'Home & Kitchen', 'Clothing', 
     'Health & Beauty', 'Toys & Games', 'Sports & Outdoors', 'Auto & Hardware'
 ]
 
 np.random.seed(42)
-grid_size = 10
+grid_size = 100
 category_coords = {category: (np.random.randint(0, grid_size), np.random.randint(0, grid_size)) for category in categories}
 category_coords['Start'] = (0, 0)
 
@@ -34,19 +32,23 @@ def tsp_brute_force(coords, items):
             best_path = current_path
     return best_path, min_distance
 
+def calculate_expected_time(total_distance, num_selections):
+    # Time for traveling
+    travel_time = (total_distance / 10) * 1  # 1 minute for every 10 distance units
+    # Time for selections
+    selection_time = num_selections * 0.5  # 0.5 minutes (30 seconds) per selection
+    return travel_time + selection_time
+
 def animate_path(path, coords, selected_items):
     ax.clear()
     
-    # Draw all points with default color
     for category, coord in coords.items():
         ax.scatter(coord[0], coord[1], c='gray', s=100)
     
-    # Highlight selected items and start point
     for category in selected_items + ['Start']:
         ax.scatter(coords[category][0], coords[category][1], c='blue', s=100)
-        ax.text(coords[category][0] + 0.2, coords[category][1] + 0.2, category, fontsize=12, color='red')
+        ax.text(coords[category][0] + 0.5, coords[category][1] + 0.5, category, fontsize=12, color='red')
     
-    # Draw the route between selected items
     for i in range(len(path) - 1):
         ax.plot([coords[path[i]][0], coords[path[i + 1]][0]], [coords[path[i]][1], coords[path[i + 1]][1]], 'g--', linewidth=2)
     
@@ -60,16 +62,17 @@ def animate_path(path, coords, selected_items):
 
 def update(val):
     selected_items = [label for label, active in zip(categories, check.get_status()) if active]
-    best_path, _ = tsp_brute_force(category_coords, selected_items)
+    best_path, total_distance = tsp_brute_force(category_coords, selected_items)
+    expected_time = calculate_expected_time(total_distance, len(selected_items))
+    print(f"Expected Time: {expected_time:.2f} minutes")
+    
     animate_path(best_path, category_coords, selected_items)
 
 # Plot initialization
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(8, 8))
 plt.subplots_adjust(left=0.3)
 
-# Checkbuttons widget
 check = CheckButtons(plt.axes([0.05, 0.4, 0.15, 0.5]), categories, [False] * len(categories))
 check.on_clicked(update)
 
-# Show the plot
 plt.show()
